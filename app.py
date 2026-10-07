@@ -53,7 +53,7 @@ def check_spx(message):
         return bot.reply_to(message, "⚠️ Nhập mã vận đơn vô sếp ơi!\nVD: <code>/spx SPXVN123456</code>", parse_mode='HTML')
     
     bang_nut = InlineKeyboardMarkup()
-    link_tra_cuu = f"https://spx.vn/tracking?logistic_tracking_number={mvd}"
+    link_tra_cuu = f"https://spx.vn/track?{mvd}"
     bang_nut.add(InlineKeyboardButton("🚀 MỞ TRANG TRA CỨU SPX", url=link_tra_cuu))
     
     bot.reply_to(
