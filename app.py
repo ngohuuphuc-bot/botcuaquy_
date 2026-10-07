@@ -43,34 +43,51 @@ def check_danh_muc(message):
     except Exception as e: bot.reply_to(message, f"❌ Lỗi mạng: {e}")
 
 # --- Lệnh /spx ---
+# --- Lệnh /spx (Gửi kết quả thẳng về chat, vượt rào bảo mật) ---
 @bot.message_handler(commands=['spx'])
 def check_spx(message):
     if message.from_user.id != ID_CUA_BAN: return
     mvd = message.text.replace('/spx', '').strip()
-    if not mvd: return bot.reply_to(message, "⚠️ Nhập mã vận đơn sếp ơi!")
-    bot.reply_to(message, f"⏳ Đang tra hành trình {mvd}...")
+    if not mvd: return bot.reply_to(message, "⚠️ Nhập mã vận đơn sếp ơi!\nVD: <code>/spx SPXVN123456</code>", parse_mode='HTML')
+    
+    bot.reply_to(message, f"⏳ Đang bóc tách dữ liệu hành trình {mvd}...")
     try:
+        # Giả lập bộ Header đầy đủ thông tin của một trình duyệt thật đang lướt SPX
         url = f"https://spx.vn/api/v2/fleet_order/tracking/search?sls_tracking_number={mvd}"
-        res = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}).json()
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Referer': 'https://spx.vn/',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
         
-        if res.get('message') == 'success' and res.get('data') and res['data'].get('tracking_info'):
+        response = requests.get(url, headers=headers, timeout=10)
+        res = response.json()
+        
+        if res.get('message') == 'success' and res.get('data') and res.get('data').get('tracking_info'):
             tracking_info = res['data']['tracking_info']
-            text_reply = f"📦 <b>MÃ VẬN ĐƠN: {mvd}</b>\n\n"
+            text_reply = f"📦 <b>HÀNH TRÌNH MÃ VẬN ĐƠN:</b> <code>{mvd}</code>\n\n"
+            
             for track in tracking_info:
                 try:
                     ts = int(track.get('timestamp', track.get('update_time', 0)))
                     thoi_gian = datetime.datetime.fromtimestamp(ts).strftime('%H:%M - %d/%m/%Y')
-                except: thoi_gian = str(track.get('timestamp', ''))
+                except: 
+                    thoi_gian = str(track.get('timestamp', track.get('update_time', '')))
+                
                 mo_ta = track.get('description', '')
                 text_reply += f"🕒 <b>{thoi_gian}</b>\n📍 {mo_ta}\n〰️〰️〰️〰️〰️\n"
-            if len(text_reply) > 4000: bot.send_message(message.chat.id, text_reply[:4000] + "\n...(Cắt bớt)", parse_mode='HTML')
-            else: bot.send_message(message.chat.id, text_reply, parse_mode='HTML')
-        else: 
-            # Bắt bot in ra câu trả lời gốc của SPX
-            loi = res.get('message', 'Lỗi không xác định')
-            bot.reply_to(message, f"❌ Không tìm thấy cục hàng này.\n(Lý do SPX trả về: {loi})")
-    except Exception as e: bot.reply_to(message, f"❌ Lỗi mạng: {e}")
-
+            
+            if len(text_reply) > 4000:
+                bot.send_message(message.chat.id, text_reply[:4000] + "\n...(Đã cắt bớt vì quá dài)", parse_mode='HTML')
+            else:
+                bot.send_message(message.chat.id, text_reply, parse_mode='HTML')
+        else:
+            bot.reply_to(message, f"❌ Không tìm thấy thông tin. (Mã hoặc đơn đã cũ / không tồn tại trên hệ thống SPX).")
+            
+    except Exception as e:
+        bot.reply_to(message, f"❌ Lỗi kết nối tới máy chủ SPX: {e}")
 # --- CỔNG WEB ẢO CHO RENDER ---
 @app.route('/')
 def ping():
