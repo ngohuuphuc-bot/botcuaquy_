@@ -88,6 +88,26 @@ def check_spx(message):
             
     except Exception as e:
         bot.reply_to(message, f"❌ Lỗi kết nối tới máy chủ SPX: {e}")
+
+# --- Lệnh /spx (Tra cứu nhanh, chống lỗi chặn API từ SPX) ---
+@bot.message_handler(commands=['spx'])
+def check_spx(message):
+    if message.from_user.id != ID_CUA_BAN: return
+    mvd = message.text.replace('/spx', '').strip()
+    if not mvd: return bot.reply_to(message, "⚠️ Nhập mã vận đơn sếp ơi!\nVD: <code>/spx SPXVN123456</code>", parse_mode='HTML')
+    
+    # Tạo nút bấm điều hướng thẳng tới trang tra cứu chính thức của SPX
+    bang_nut = InlineKeyboardMarkup()
+    link_tra_cuu = f"https://spx.vn/tracking?logistic_tracking_number={mvd}"
+    nut_bam = InlineKeyboardButton("🔍 Xem Full Hành Trình Tại SPX", url=link_tra_cuu)
+    bang_nut.add(nut_bam)
+    
+    bot.reply_to(
+        message, 
+        f"📦 <b>MÃ VẬN ĐƠN:</b> <code>{mvd}</code>\n\n⚡ SPX chặn API server ngoài nên bot tạo sẵn lối tắt chính hãng cho sếp:", 
+        reply_markup=bang_nut, 
+        parse_mode='HTML'
+    )
 # --- CỔNG WEB ẢO CHO RENDER ---
 @app.route('/')
 def ping():
