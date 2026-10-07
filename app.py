@@ -6,7 +6,7 @@ import threading
 import os
 from curl_cffi import requests # VŨ KHÍ TỐI THƯỢNG VƯỢT CLOUDFLARE TẠI ĐÂY
 
-TOKEN = "ĐIỀN_TOKEN_BOT_MỚI_VÀO_ĐÂY"
+TOKEN = "8794870921:AAHPbiy4UwwoAJJi-swNQPQz2CJpcFeBysk"
 ID_CUA_BAN = 6316013638
 
 bot = telebot.TeleBot(TOKEN, threaded=False)
