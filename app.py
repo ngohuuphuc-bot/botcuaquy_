@@ -13,6 +13,11 @@ ID_CUA_BAN = 6316013638
 bot = telebot.TeleBot(TOKEN, threaded=False)
 app = Flask(__name__)
 
+# --- Lệnh /start cho vui cửa vui nhà ---
+@bot.message_handler(commands=['start'])
+def handle_start(message):
+    bot.reply_to(message, "🚀 Bot Trinh Sát 24/24 đã sẵn sàng nhận lệnh từ sếp!")
+
 # --- Lệnh /danhmuc ---
 @bot.message_handler(commands=['danhmuc'])
 def check_danh_muc(message):
@@ -47,6 +52,7 @@ def check_spx(message):
     try:
         url = f"https://spx.vn/api/v2/fleet_order/tracking/search?sls_tracking_number={mvd}"
         res = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}).json()
+        
         if res.get('message') == 'success' and res.get('data') and res['data'].get('tracking_info'):
             tracking_info = res['data']['tracking_info']
             text_reply = f"📦 <b>MÃ VẬN ĐƠN: {mvd}</b>\n\n"
@@ -59,7 +65,10 @@ def check_spx(message):
                 text_reply += f"🕒 <b>{thoi_gian}</b>\n📍 {mo_ta}\n〰️〰️〰️〰️〰️\n"
             if len(text_reply) > 4000: bot.send_message(message.chat.id, text_reply[:4000] + "\n...(Cắt bớt)", parse_mode='HTML')
             else: bot.send_message(message.chat.id, text_reply, parse_mode='HTML')
-        else: bot.reply_to(message, "❌ Không tìm thấy cục hàng này trên hệ thống.")
+        else: 
+            # Bắt bot in ra câu trả lời gốc của SPX
+            loi = res.get('message', 'Lỗi không xác định')
+            bot.reply_to(message, f"❌ Không tìm thấy cục hàng này.\n(Lý do SPX trả về: {loi})")
     except Exception as e: bot.reply_to(message, f"❌ Lỗi mạng: {e}")
 
 # --- CỔNG WEB ẢO CHO RENDER ---
@@ -71,9 +80,7 @@ def run_bot():
     bot.infinity_polling()
 
 if __name__ == "__main__":
-    # Tách bot ra chạy luồng riêng để không bị đụng với Flask
     t = threading.Thread(target=run_bot)
     t.start()
-    # Chạy Web ảo để Render kích hoạt
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
